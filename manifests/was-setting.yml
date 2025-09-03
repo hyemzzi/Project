@@ -1,45 +1,38 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: was-php
+  name: private-app
+  labels:
+    app: private-app
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: was-php
+      app: private-app
   template:
     metadata:
       labels:
-        app: was-php
+        app: private-app
     spec:
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: was
-                operator: In
-                values:
-                - was2 
       tolerations:
       - key: "role"
         operator: "Equal"
         value: "was"
         effect: "NoSchedule"
+      nodeSelector:
+        eks.amazonaws.com/nodegroup: Private-was
       containers:
-      - name: php
-        image: namme/was:latest   # <-- WAS 커스텀 이미지
-        ports:
-        - containerPort: 9000
-        env:
-        - name: DB_HOST
-          value: "database.cdyykgyowiim.ap-northeast-2.rds.amazonaws.com"          # <-- 실제 RDS 엔드포인트로 변경
-        - name: DB_USER
-          value: "admin"
-        - name: DB_PASSWORD
-          value: "1q2w3e4r!"
-        - name: DB_NAME
-          value: "mydb"
+        - name: private-container
+          image: dgpark3675/mywas:latest
+          ports:
+            - containerPort: 9000
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+            limits:
+              cpu: "1"
+              memory: "2Gi"
 ---
 apiVersion: v1
 kind: Service
@@ -48,7 +41,33 @@ metadata:
 spec:
   type: ClusterIP
   selector:
-    app: was-php
+    app: private-app
   ports:
-  - port: 9000
-    targetPort: 9000
+    - port: 9000
+      targetPort: 9000
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: was-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: private-app
+  minReplicas: 2
+  maxReplicas: 4
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 60
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300   # 최근 5분 평균으로 판단
+      policies:
+        - type: Percent
+          value: 50                     # 한 번에 최대 50%까지 줄임
+          periodSeconds: 60             # 60초마다 평가

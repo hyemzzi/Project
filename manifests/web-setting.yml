@@ -1,40 +1,73 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: web-nginx
+  name: public-app
+  labels:
+    app: public-app
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: web-nginx
+      app: public-app
   template:
     metadata:
       labels:
-        app: web-nginx
+        app: public-app
     spec:
+      tolerations:
+      - key: "role2"
+        operator: "Equal"
+        value: "web"
+        effect: "NoSchedule"
+      nodeSelector:
+        eks.amazonaws.com/nodegroup: Public-web
       containers:
-      - name: web
-        image: namme/web:latest
-        ports:
-        - containerPort: 80
-      topologySpreadConstraints:
-      - maxSkew: 1
-        topologyKey: kubernetes.io/hostname
-        whenUnsatisfiable: ScheduleAnyway
-        labelSelector:
-          matchLabels:
-            app: web-nginx
-
+        - name: public-container
+          image: dgpark3675/myweb:latest
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "500m"
+              memory: "1Gi"
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: web-nginx-svc
+  name: public-service
 spec:
   type: LoadBalancer
   selector:
-    app: web-nginx
+    app: public-app
   ports:
-  - port: 80
-    targetPort: 80
-    #nodePort: 30080
+    - port: 80
+      targetPort: 80
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: web-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: public-app
+  minReplicas: 2
+  maxReplicas: 4
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 60
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300   # 최근 5분 평균으로 판단
+      policies:
+        - type: Percent
+          value: 50                     # 한 번에 최대 50%까지 줄임
+          periodSeconds: 60             # 60초마다 평가
