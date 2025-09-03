@@ -1,0 +1,27 @@
+name: Build WAS Image
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - 'was/**'
+
+jobs:
+  build-was:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - run: |
+          DATE=$(date +'%Y.%m.%d')
+          echo "TAG=v${DATE}-${{ github.run_number }}" >> $GITHUB_ENV
+      - uses: docker/build-push-action@v4
+        with:
+          context: ./was
+          push: true
+          tags: |
+            dgpark3675/mywas:latest
+            dgpark3675/mywas:${{ env.TAG }}
