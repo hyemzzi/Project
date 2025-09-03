@@ -24,7 +24,7 @@ spec:
         eks.amazonaws.com/nodegroup: Public-web
       containers:
         - name: public-container
-          image: dgpark3675/myweb:v2
+          image: dgpark3675/myweb:v4
           ports:
             - containerPort: 80
           resources:
