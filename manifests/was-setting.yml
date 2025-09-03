@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: was-php
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: was-php
+  template:
+    metadata:
+      labels:
+        app: was-php
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: was
+                operator: In
+                values:
+                - was2 
+      tolerations:
+      - key: "role"
+        operator: "Equal"
+        value: "was"
+        effect: "NoSchedule"
+      containers:
+      - name: php
+        image: namme/was:latest   # <-- WAS 커스텀 이미지
+        ports:
+        - containerPort: 9000
+        env:
+        - name: DB_HOST
+          value: "database.cdyykgyowiim.ap-northeast-2.rds.amazonaws.com"          # <-- 실제 RDS 엔드포인트로 변경
+        - name: DB_USER
+          value: "admin"
+        - name: DB_PASSWORD
+          value: "1q2w3e4r!"
+        - name: DB_NAME
+          value: "mydb"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: was-service
+spec:
+  type: ClusterIP
+  selector:
+    app: was-php
+  ports:
+  - port: 9000
+    targetPort: 9000
