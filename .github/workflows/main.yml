@@ -9,11 +9,8 @@ on:
 
 jobs:
   build-web:
-    if: contains(github.event.head_commit.message, 'web') || github.event_name == 'push'
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: web
+    if: contains(github.event.head_commit.message, 'web') || github.event.head_commit.modified && contains(join(github.event.head_commit.modified), 'web/')
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -25,12 +22,10 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Set up Docker image tag
-        id: vars
         run: |
           DATE=$(date +'%Y.%m.%d')
-          RUN_NUMBER=${{ github.run_number }}
-          echo "TAG=v${DATE}-${RUN_NUMBER}" >> $GITHUB_ENV
-          
+          echo "TAG=v${DATE}-${{ github.run_number }}" >> $GITHUB_ENV
+
       - name: Build and push web Docker image
         uses: docker/build-push-action@v4
         with:
@@ -41,11 +36,8 @@ jobs:
             dgpark3675/myweb:${{ env.TAG }}
 
   build-was:
-    if: contains(github.event.head_commit.message, 'was') || github.event_name == 'push'
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: was
+    if: contains(github.event.head_commit.message, 'was') || github.event.head_commit.modified && contains(join(github.event.head_commit.modified), 'was/')
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -57,11 +49,9 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Set up Docker image tag
-        id: vars
         run: |
           DATE=$(date +'%Y.%m.%d')
-          RUN_NUMBER=${{ github.run_number }}
-          echo "TAG=v${DATE}-${RUN_NUMBER}" >> $GITHUB_ENV
+          echo "TAG=v${DATE}-${{ github.run_number }}" >> $GITHUB_ENV
 
       - name: Build and push was Docker image
         uses: docker/build-push-action@v4
