@@ -27,6 +27,11 @@ jobs:
           docker build -t $IMAGE ./web
           docker push $IMAGE
           sed -i "s|image: .*/myweb:.*|image: $IMAGE|g" manifests/web-setting.yml
+      
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GH_PAT }}
 
       - name: Commit and push updated manifests
         run: |
