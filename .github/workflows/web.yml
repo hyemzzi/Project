@@ -14,6 +14,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GH_PAT }}
 
       - name: Log in to DockerHub
         uses: docker/login-action@v2
@@ -28,11 +30,6 @@ jobs:
           docker push $IMAGE
           sed -i "s|image: .*/myweb:.*|image: $IMAGE|g" manifests/web-setting.yml
       
-      - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          token: ${{ secrets.GH_PAT }}
-
       - name: Commit and push updated manifests
         run: |
           git config --global user.name "github-actions[bot]"
