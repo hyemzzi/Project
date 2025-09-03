@@ -24,7 +24,7 @@ spec:
         eks.amazonaws.com/nodegroup: Private-was
       containers:
         - name: private-container
-          image: dgpark3675/mywas:v3
+          image: dgpark3675/mywas:v4
           ports:
             - containerPort: 9000
           resources:
