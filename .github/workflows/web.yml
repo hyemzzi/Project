@@ -1,27 +1,37 @@
-name: Build Web Image
+name: Web CI/CD Pipeline
 
 on:
   push:
-    branches: ["main"]
+    branches:
+      - main
     paths:
-      - 'web/**'
+      - "web/**"
 
 jobs:
-  build-web:
+  build-and-deploy-web:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v3
-      - uses: docker/login-action@v2
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Log in to DockerHub
+        uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-      - run: |
-          DATE=$(date +'%Y.%m.%d')
-          echo "TAG=v${DATE}-${{ github.run_number }}" >> $GITHUB_ENV
-      - uses: docker/build-push-action@v4
-        with:
-          context: ./web
-          push: true
-          tags: |
-            dgpark3675/myweb:latest
-            dgpark3675/myweb:${{ env.TAG }}
+
+      - name: Build and Push web image
+        run: |
+          IMAGE=dgpark3675/myweb:v${{ github.run_number }}
+          docker build -t $IMAGE ./web
+          docker push $IMAGE
+          sed -i "s|image: .*/myweb:.*|image: $IMAGE|g" manifests/web-setting.yml
+
+      - name: Commit and push updated manifests
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add manifests/web-setting.yml
+          git commit -m "Update web image tag to v${{ github.run_number }} [skip ci]" || echo "No changes to commit"
+          git push
