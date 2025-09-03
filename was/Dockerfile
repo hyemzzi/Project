@@ -2,7 +2,7 @@ FROM php:8.2-fpm
 
 # MariaDB 연동을 위한 확장 설치
 RUN docker-php-ext-install mysqli pdo pdo_mysql
-# 변수선언 추가
+# 변수 추가
 # 빌드 타임 ARG
 ARG DB_HOST
 ARG DB_USER
