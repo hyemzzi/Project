@@ -24,7 +24,7 @@ spec:
         eks.amazonaws.com/nodegroup: Public-web
       containers:
         - name: public-container
-          image: dgpark3675/myweb:v1
+          image: dgpark3675/myweb:v2
           ports:
             - containerPort: 80
           resources:
@@ -72,4 +72,5 @@ spec:
         - type: Percent
           value: 50                     # 한 번에 최대 50%까지 줄임
           periodSeconds: 60             # 60초마다 평가
+
 
