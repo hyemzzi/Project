@@ -46,7 +46,7 @@ spec:
   ports:
     - port: 9000
       targetPort: 9000
-  #sessionAffinity: ClientIP
+  sessionAffinity: ClientIP
 ---
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
@@ -73,6 +73,7 @@ spec:
         - type: Percent
           value: 50                     # 한 번에 최대 50%까지 줄임
           periodSeconds: 60             # 60초마다 평가
+
 
 
 
